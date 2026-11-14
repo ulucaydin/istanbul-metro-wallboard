@@ -239,6 +239,41 @@ test('cold failure, offline reload and recovery distinguish cached notices from 
   await expect(page.locator('#last-fetched')).not.toHaveAttribute('datetime', previous);
 });
 
+test('custom Istanbul day and time update service, advance, and handle invalid input', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-11-11T12:00:00Z') });
+  await page.goto('/');
+  const settings = page.getByRole('button', { name: 'Display settings' });
+  await settings.click();
+  const scenario = page.getByLabel('Simulation time');
+  await scenario.selectOption('custom');
+  const time = page.getByLabel('Istanbul time', { exact: true });
+  const day = page.getByLabel('Istanbul day');
+  await time.fill('');
+  await expect(page.getByText('Enter a valid Istanbul time.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Start simulation' })).toBeDisabled();
+  await time.fill('08:20');
+  await page.getByRole('button', { name: 'Start simulation' }).click();
+  await expect(page.locator('#tracking-message')).toHaveText('Simulation · Mon 08:20 TRT');
+  await expect(page.locator('[data-lit]').first()).toBeAttached();
+  await page.clock.fastForward(60_000);
+  await expect(page.locator('#tracking-message')).toHaveText('Simulation · Mon 08:21 TRT');
+  await settings.click();
+  await time.fill('01:20');
+  await expect(page.locator('#tracking-message')).toHaveText('Simulation · Mon 01:20 TRT · No active trains');
+  await day.selectOption('6');
+  await expect(page.locator('#tracking-message')).toHaveText('Simulation · Sun 01:20 TRT');
+  await expect(page.locator('[data-lit]').first()).toBeAttached();
+  await time.fill('');
+  await expect(page.getByRole('button', { name: 'Stop simulation' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Stop simulation' }).click();
+  await expect(page.locator('#tracking-message')).toHaveText('Train tracking unavailable');
+  await settings.click();
+  await scenario.selectOption('rush');
+  await expect(page.locator('#simulation-custom')).toBeHidden();
+  await page.getByRole('button', { name: 'Start simulation' }).click();
+  await expect(page.locator('#tracking-message')).toHaveText('Simulation · 08:20 TRT');
+});
+
 test('simulation starts from settings, pulses station lamps, and can be stopped', async ({ page }) => {
   await page.clock.install();
   await page.goto('/');

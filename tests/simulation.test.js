@@ -1,9 +1,21 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { metroLines, lineById } from '../src/network.js';
-import { scenarioTimes, simulationFrame, simulationLamps } from '../src/simulation.js';
+import { customScenarioTime, scenarioTimes, simulationFrame, simulationLamps } from '../src/simulation.js';
 
 const all = metroLines.map(route => route.id);
+test('custom Istanbul day and time select the modeled weekday and night service', () => {
+  const monday = customScenarioTime('0', '08:20');
+  const sunday = customScenarioTime('6', '01:20');
+  assert.equal(new Date(monday).toISOString(), '2026-11-09T05:20:00.000Z');
+  assert.equal(new Date(sunday).toISOString(), '2026-11-14T22:20:00.000Z');
+  assert.ok(simulationFrame(monday, all).length > simulationFrame(customScenarioTime('0', '22:20'), all).length);
+  assert.ok(simulationFrame(sunday, all).length > 0);
+  assert.equal(simulationFrame(customScenarioTime('0', '01:20'), all).length, 0);
+  assert.equal(customScenarioTime('7', '08:20'), null);
+  assert.equal(customScenarioTime('0', ''), null);
+  assert.equal(customScenarioTime('0', '24:00'), null);
+});
 test('weekend overnight serves only night lines, weekday overnight is quiet', () => {
   const closed = simulationFrame(Date.parse('2026-11-11T00:05:00Z'), all);
   assert.equal(closed.length, 0);

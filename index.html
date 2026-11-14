@@ -134,8 +134,21 @@
             <option value="now">Istanbul now</option>
             <option value="rush">Weekday rush hour</option>
             <option value="night">Weekend overnight</option>
+            <option value="custom">Custom time</option>
           </select>
           <button class="secondary-button" type="button" id="simulation-toggle" aria-describedby="simulation-note" aria-pressed="false">Start simulation</button>
+        </div>
+        <div class="simulation-custom" id="simulation-custom" hidden>
+          <label for="simulation-day">Istanbul day</label>
+          <select id="simulation-day">
+            <option value="0">Monday</option><option value="1">Tuesday</option>
+            <option value="2">Wednesday</option><option value="3">Thursday</option>
+            <option value="4">Friday</option><option value="5">Saturday</option>
+            <option value="6">Sunday</option>
+          </select>
+          <label for="simulation-time">Istanbul time</label>
+          <input id="simulation-time" type="time" value="08:20" required aria-describedby="custom-time-message">
+          <p id="custom-time-message" class="selection-message" aria-live="polite"></p>
         </div>
       </fieldset>
       <button class="full-button" id="fullscreen-button" type="button">Enter fullscreen</button>

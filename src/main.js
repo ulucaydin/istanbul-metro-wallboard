@@ -6,7 +6,7 @@ import { paintStationLights, renderMap } from './map.js';
 import { createNoticePoller } from './notices.js';
 import { clockParts, formatFetch, formatPublication } from './time.js';
 import { createTracker, isFresh, liveStationLights } from './tracking.js';
-import { scenarioTimes, simulationFrame, simulationLamps } from './simulation.js';
+import { customScenarioTime, scenarioTimes, simulationFrame, simulationLamps } from './simulation.js';
 
 const $ = id => document.getElementById(id);
 const board = $('board');
@@ -57,6 +57,10 @@ let mapView = { zoom: 1, x: 0, y: 0 };
 let simulation = null;
 const simulationButton = $('simulation-toggle');
 const scenarioSelect = $('simulation-scenario');
+const customOptions = $('simulation-custom');
+const customDay = $('simulation-day');
+const customTime = $('simulation-time');
+const customMessage = $('custom-time-message');
 const approachLegend = $('approach-legend');
 const lampLegendLabel = $('lamp-legend-label');
 
@@ -384,7 +388,9 @@ function updateLights(now = Date.now()) {
   const trackingElement = $('tracking');
   if (trackingElement.dataset.state !== state) trackingElement.dataset.state = state;
   const message = $('tracking-message');
-  const label = state === 'simulation' ? 'Simulation · ' + clockParts(new Date(simulatedTime)).time + ' TRT'
+  const modeledClock = state === 'simulation' ? clockParts(new Date(simulatedTime)) : null;
+  const simulatedDay = simulation?.custom ? modeledClock.date.slice(0, 3) + ' ' : '';
+  const label = state === 'simulation' ? 'Simulation · ' + simulatedDay + modeledClock.time + ' TRT'
       + (trains.length ? '' : ' · No active trains')
     : state === 'live' ? 'Live tracking · ' + snapshot.coveredLines.length + ' of ' + (snapshot.coveredLines.every(id => lineById.get(id).mode === 'metro') ? metroLines.length : ids.length) + ' lines'
       : state === 'delayed' ? 'Train tracking delayed' : 'Train tracking unavailable';
@@ -403,21 +409,44 @@ function syncSimulation() {
   updateLights();
   simulationButton.textContent = simulation ? 'Stop simulation' : 'Start simulation';
   simulationButton.setAttribute('aria-pressed', String(Boolean(simulation)));
+  const custom = scenarioSelect.value === 'custom';
+  customOptions.hidden = !custom;
+  const invalid = custom && customScenarioTime(customDay.value, customTime.value) === null;
+  simulationButton.disabled = invalid && !simulation;
+  customMessage.textContent = invalid ? 'Enter a valid Istanbul time.' : '';
+}
+
+function selectedSimulationTime(now) {
+  if (scenarioSelect.value === 'custom') return customScenarioTime(customDay.value, customTime.value);
+  return scenarioTimes[scenarioSelect.value] ?? now;
 }
 
 simulationButton.addEventListener('click', () => {
-  const preset = scenarioTimes[scenarioSelect.value];
-  simulation = simulation ? null : { offset: preset ? preset - Date.now() : 0 };
+  if (simulation) simulation = null;
+  else {
+    const now = Date.now();
+    const selected = selectedSimulationTime(now);
+    if (selected === null) return;
+    simulation = { offset: selected - now, custom: scenarioSelect.value === 'custom' };
+  }
   syncSimulation();
   settings.close();
 });
 
-scenarioSelect.addEventListener('change', () => {
-  if (!simulation) return;
-  const preset = scenarioTimes[scenarioSelect.value];
-  simulation.offset = preset ? preset - Date.now() : 0;
+function changeSimulationTime() {
+  if (simulation) {
+    const now = Date.now();
+    const selected = selectedSimulationTime(now);
+    if (selected !== null) {
+      simulation.offset = selected - now;
+      simulation.custom = scenarioSelect.value === 'custom';
+    }
+  }
   syncSimulation();
-});
+}
+scenarioSelect.addEventListener('change', changeSimulationTime);
+customDay.addEventListener('change', changeSimulationTime);
+customTime.addEventListener('change', changeSimulationTime);
 
 function updateClock() {
   const now = new Date();

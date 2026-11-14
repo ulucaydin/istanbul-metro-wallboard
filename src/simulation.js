@@ -24,6 +24,13 @@ export const scenarioTimes = {
   night: Date.parse('2026-11-14T22:20:00Z'),
 };
 
+export function customScenarioTime(day, time) {
+  if (!/^[0-6]$/.test(day) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return null;
+  const [hour, minuteValue] = time.split(':').map(Number);
+  // 9 November 2026 was Monday. Istanbul is UTC+3 for these modeled dates.
+  return Date.UTC(2026, 10, 9 + Number(day), hour - 3, minuteValue);
+}
+
 function journey(route, stops, duration, reverse, shuttle) {
   const ordered = reverse ? [...stops].reverse() : stops;
   const dwells = ordered.map((id, index) => {
