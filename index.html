@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#211d18">
+    <meta name="description" content="A wall display for Istanbul’s metro network, local time and published service notices.">
+    <link rel="icon" href="./mark.svg" type="image/svg+xml">
+    <title>İstanbul Metro Wallboard</title>
+  </head>
+  <body>
+    <div class="board" id="board">
+      <header class="masthead">
+        <div class="identity">
+          <img class="mark" src="./mark.svg" alt="" width="58" height="58">
+          <div>
+            <p class="eyebrow identity-label">Metro wallboard</p>
+            <h1>İstanbul Metro</h1>
+          </div>
+        </div>
+        <div class="masthead-right">
+          <div class="clock" aria-label="Istanbul local time">
+            <div class="clock-time"><time id="clock-time">--:--</time><span id="clock-seconds" aria-hidden="true"></span></div>
+            <div class="clock-caption"><span id="clock-date"></span><span class="clock-zone">TRT <span>UTC+3</span></span></div>
+          </div>
+          <button class="icon-button settings-toggle" id="settings-toggle" type="button" aria-haspopup="dialog" aria-label="Display settings" title="Display settings">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h6m4 0h6M4 12h11m4 0h1M4 17h2m4 0h10"/><circle cx="12" cy="7" r="2"/><circle cx="17" cy="12" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <main class="dashboard">
+        <section class="map-card" aria-label="Istanbul rail network map">
+          <div class="map-viewport" id="map-viewport" tabindex="0" aria-label="Rail map. Use arrow keys to pan and plus or minus to zoom."></div>
+          <div class="map-navigation" aria-label="Map navigation">
+            <button type="button" id="map-zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+            <button type="button" id="map-zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
+            <button type="button" id="map-fit" aria-label="Fit routes" title="Fit routes">↺</button>
+            <details class="map-credits" id="map-credits" open>
+              <summary aria-label="Map credits" title="Map credits">ⓘ</summary>
+              <div class="map-credits-links">
+                <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>
+                <a href="./geography-data.json" download aria-label="Download ODbL geographic data">Map data</a>
+              </div>
+            </details>
+          </div>
+          <div class="map-legend" aria-label="Map symbols">
+            <span><i class="legend-station" aria-hidden="true"></i><span id="station-legend-label">Station</span></span>
+            <span><i class="legend-lit" aria-hidden="true"></i><span id="lamp-legend-label">Confirmed stop</span></span>
+            <span><i class="legend-interchange" aria-hidden="true"></i>Rail interchange</span>
+            <span><i class="legend-rail" aria-hidden="true"></i>Other transit</span>
+            <span id="approach-legend" hidden><i class="legend-lit legend-pulse" aria-hidden="true"></i>In transit · next stop</span>
+            <span id="map-mode-status" class="map-mode-status" role="status"></span>
+          </div>
+        </section>
+
+        <aside class="sidebar" aria-label="Routes and service notices">
+          <section class="line-card" aria-labelledby="lines-title">
+            <div class="section-heading"><h2 id="lines-title">Rail lines</h2><span class="line-count" id="line-count"></span></div>
+            <div class="route-list" id="route-list"></div>
+          </section>
+          <section class="service-card" aria-labelledby="service-title">
+            <div class="section-heading">
+              <h2 id="service-title">Service notices</h2>
+              <span class="status-chip" id="notice-state" role="status">Checking</span>
+            </div>
+            <p class="service-message" id="service-message">Checking the notice snapshot.</p>
+            <div id="notice-preview"></div>
+            <button type="button" id="notices-toggle" class="text-button">Notice details <span aria-hidden="true">↗</span></button>
+          </section>
+        </aside>
+      </main>
+
+      <footer class="footer">
+        <p class="tracking" id="tracking" data-state="unavailable" role="status"><i aria-hidden="true"></i><span id="tracking-message">Train tracking unavailable</span></p>
+        <p class="last-fetch">Notices last fetched <time id="last-fetched">—</time></p>
+        <a href="https://www.metro.istanbul/en/Announcement/All" target="_blank" rel="noopener">Metro İstanbul notices <span aria-hidden="true">↗</span></a>
+      </footer>
+    </div>
+
+    <dialog class="overlay settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
+      <div class="dialog-heading"><h2 id="settings-title">Display settings</h2><button class="icon-button close-button" type="button" data-close aria-label="Close settings">×</button></div>
+      <fieldset><legend>Transport types</legend><div class="transport-options" id="transport-options"></div></fieldset>
+      <details class="route-settings"><summary>Individual lines</summary><div class="line-options" id="line-options"></div></details>
+      <p id="selection-message" class="selection-message" aria-live="polite"></p>
+      <fieldset><legend>Text size</legend>
+        <div class="segmented" id="text-options">
+          <label><input type="radio" name="text-size" value="standard">Standard</label>
+          <label><input type="radio" name="text-size" value="large">Large</label>
+          <label><input type="radio" name="text-size" value="largest">Largest</label>
+        </div>
+      </fieldset>
+      <fieldset><legend>Map view</legend>
+        <div class="segmented view-options">
+          <label><input type="radio" name="map-view" value="geographic">Geographic</label>
+          <label><input type="radio" name="map-view" value="metroboard">Metroboard view</label>
+        </div>
+      </fieldset>
+      <label class="view-option"><input type="checkbox" id="map-only">Map-only view</label>
+      <fieldset><legend>Map finish</legend>
+        <div class="segmented finish-options">
+          <label><input type="radio" name="finish" value="light">Light</label>
+          <label><input type="radio" name="finish" value="dark">Dark</label>
+        </div>
+      </fieldset>
+      <fieldset><legend>In-transit lights</legend>
+        <div class="segmented view-options">
+          <label><input type="radio" name="in-transit" value="pulsing">Pulsing</label>
+          <label><input type="radio" name="in-transit" value="solid">Solid</label>
+        </div>
+      </fieldset>
+      <fieldset><legend>Train simulation</legend>
+        <p class="simulation-note" id="simulation-note">Run a modeled timetable for Istanbul.</p>
+        <div class="simulation-controls">
+          <label class="visually-hidden" for="simulation-scenario">Simulation time</label>
+          <select id="simulation-scenario">
+            <option value="now">Istanbul now</option>
+            <option value="rush">Weekday rush hour</option>
+            <option value="night">Weekend overnight</option>
+          </select>
+          <button class="secondary-button" type="button" id="simulation-toggle" aria-describedby="simulation-note" aria-pressed="false">Start simulation</button>
+        </div>
+      </fieldset>
+      <button class="full-button" id="fullscreen-button" type="button">Enter fullscreen</button>
+      <p class="selection-message" id="fullscreen-message" aria-live="polite"></p>
+    </dialog>
+
+    <dialog class="overlay route-dialog" id="route-dialog" aria-labelledby="route-title"></dialog>
+    <dialog class="overlay notices-dialog" id="notices-dialog" aria-labelledby="notices-title"></dialog>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
