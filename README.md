@@ -2,6 +2,8 @@
 
 An independent browser display for 22 Istanbul rail services across five selectable transport types. The metro layer has 11 lines and 157 distinct station or interchange markers. All layers together have 280 mapped nodes. It shows the Istanbul clock, a geographic network map, full station lists, and dated notices published by the operator. The diagram uses a simplified OpenStreetMap coastline and track geometry, and station lamps set into a brushed-metal face with a walnut-style frame.
 
+![İstanbul Metro Wallboard in Metroboard view with station lamps lit during the weekday rush-hour simulation](docs/wallboard-screenshot.png)
+
 ## Run from source
 
 Install Node.js 22.12+ or 24 LTS and run the following in the extracted source directory.
