@@ -20,9 +20,11 @@ const routeDialog = $('route-dialog');
 const noticesDialog = $('notices-dialog');
 const ids = lines.map(route => route.id);
 const defaultSettings = { visible: metroLines.map(route => route.id), size: 'standard', finish: 'light',
-  mapOnly: false, mapView: 'geographic', inTransit: 'pulsing' };
+  mapOnly: false, mapView: 'geographic', inTransit: 'pulsing', material: 'aluminum', grain: 'fine' };
 const preferenceKey = 'istanbul-wallboard.preferences.v1';
 const sizeOptions = ['standard', 'large', 'largest'];
+const metalMaterials = ['aluminum', 'brass', 'copper'];
+const metalGrains = ['fine', 'coarse', 'vertical', 'smooth'];
 const operatorNotices = 'https://www.metro.istanbul/en/Announcement/All';
 
 let storage;
@@ -38,6 +40,8 @@ function loadPreferences() {
       mapOnly: previous?.mapOnly === true,
       mapView: previous?.mapView === 'metroboard' ? 'metroboard' : defaultSettings.mapView,
       inTransit: previous?.inTransit === 'solid' ? 'solid' : defaultSettings.inTransit,
+      material: metalMaterials.includes(previous?.material) ? previous.material : defaultSettings.material,
+      grain: metalGrains.includes(previous?.grain) ? previous.grain : defaultSettings.grain,
       size: sizeOptions.includes(previous?.size) ? previous.size : defaultSettings.size,
     };
   } catch {
@@ -207,6 +211,16 @@ for (const radio of mapViewInputs) {
   });
 }
 
+const materialInput = $('metal-material');
+const grainInput = $('metal-grain');
+for (const [input, preference] of [[materialInput, 'material'], [grainInput, 'grain']]) {
+  input.addEventListener('change', () => {
+    preferences[preference] = input.value;
+    mapCard.dataset[preference] = input.value;
+    savePreferences();
+  });
+}
+
 const inTransitInputs = [...document.querySelectorAll('input[name="in-transit"]')];
 for (const radio of inTransitInputs) {
   radio.addEventListener('change', () => {
@@ -303,7 +317,12 @@ function applyPreferences() {
   board.dataset.textSize = preferences.size;
   board.toggleAttribute('data-map-only', preferences.mapOnly);
   mapCard.dataset.mapView = preferences.mapView;
+  mapCard.dataset.material = preferences.material;
+  mapCard.dataset.grain = preferences.grain;
   mapCard.dataset.inTransit = preferences.inTransit;
+  $('metal-options').hidden = preferences.mapView !== 'metroboard';
+  materialInput.value = preferences.material;
+  grainInput.value = preferences.grain;
   $('station-legend-label').textContent = preferences.mapView === 'metroboard' ? 'Station lamps' : 'Station';
   mapOnlyInput.checked = preferences.mapOnly;
   const actions = preferences.mapOnly ? mapCard : mastheadActions;

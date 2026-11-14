@@ -99,6 +99,56 @@ test('map credits collapse after startup and can be reopened with the keyboard',
   await expect(page.getByRole('link', { name: 'Download ODbL geographic data' })).toBeVisible();
 });
 
+test('Metroboard materials and grains persist and preserve the running simulation', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const settings = page.getByRole('button', { name: 'Display settings' });
+  await settings.click();
+  const panel = page.locator('#metal-options');
+  await expect(panel).toBeHidden();
+  await page.getByRole('radio', { name: 'Metroboard view' }).check();
+  await expect(panel).toBeVisible();
+  const material = page.getByLabel('Material');
+  const grain = page.getByLabel('Grain');
+  await expect(material).toHaveValue('aluminum');
+  await expect(grain).toHaveValue('fine');
+  await page.getByLabel('Simulation time').selectOption('rush');
+  await page.getByRole('button', { name: 'Start simulation' }).click();
+  const status = page.locator('#tracking-message');
+  await expect(status).toHaveText('Simulation · 08:20 TRT');
+  const card = page.locator('.map-card');
+  const viewport = page.locator('#map-viewport');
+  const initialBackground = await viewport.evaluate(node => getComputedStyle(node).backgroundImage);
+  await settings.click();
+  await material.selectOption('brass');
+  await grain.selectOption('vertical');
+  await expect(card).toHaveAttribute('data-material', 'brass');
+  await expect(card).toHaveAttribute('data-grain', 'vertical');
+  expect(await viewport.evaluate(node => getComputedStyle(node).backgroundImage)).not.toBe(initialBackground);
+  await page.getByRole('radio', { name: 'Dark', exact: true }).check();
+  const darkBrass = await viewport.evaluate(node => getComputedStyle(node).getPropertyValue('--metal-base').trim());
+  await material.selectOption('copper');
+  expect(await viewport.evaluate(node => getComputedStyle(node).getPropertyValue('--metal-base').trim())).not.toBe(darkBrass);
+  await grain.selectOption('coarse');
+  expect(await viewport.evaluate(node => getComputedStyle(node).backgroundSize)).toContain('2048px 1024px');
+  await grain.selectOption('smooth');
+  expect(await viewport.evaluate(node => getComputedStyle(node).backgroundImage)).not.toContain('brushed-metal.svg');
+  await grain.selectOption('vertical');
+  await page.getByRole('radio', { name: 'Geographic', exact: true }).check();
+  await expect(panel).toBeHidden();
+  await page.getByRole('radio', { name: 'Metroboard view' }).check();
+  await expect(material).toHaveValue('copper');
+  await expect(grain).toHaveValue('vertical');
+  await page.getByRole('button', { name: 'Close settings' }).click();
+  await expect(status).toHaveText('Simulation · 08:20 TRT');
+  await expect(page.locator('.is-approaching').first()).toBeAttached();
+  await page.reload();
+  await settings.click();
+  await expect(material).toHaveValue('copper');
+  await expect(grain).toHaveValue('vertical');
+  await expect(page.getByRole('radio', { name: 'Dark', exact: true })).toBeChecked();
+});
+
 test('preferences survive reload and fullscreen can enter and exit', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Display settings' }).click();
