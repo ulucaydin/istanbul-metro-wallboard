@@ -355,8 +355,7 @@ export function renderMap(container, selected, textSize, view, mode) {
     for (const { group } of lamps) group.toggleAttribute('data-lit', litStations.has(group));
   });
 
-  const obstacles = [{ x: 0, y: 0, w: metroboard ? (layout.width <= 550 ? 123 : 143) : 115, h: 50 },
-    { x: layout.width - 58, y: 0, w: 58, h: 50 }];
+  const obstacles = [{ x: layout.width - 58, y: 0, w: 58, h: 50 }];
   const badges = visible.map(route => ({ route, point: project(geographic.routes[route.id].stops[route.badge?.[0] ?? route.stops.at(-1)]) }));
   const stationObstacles = metroboard ? renderedStops.flatMap(stop => stop.boxes) : [];
   for (const { route, point: [x, y] } of badges) {

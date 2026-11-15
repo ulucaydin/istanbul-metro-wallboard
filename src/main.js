@@ -260,16 +260,7 @@ function zoomMap(factor, anchorX = 0, anchorY = 0) {
   drawMapSoon();
 }
 
-$('map-zoom-in').addEventListener('click', () => zoomMap(1.55));
-$('map-zoom-out').addEventListener('click', () => zoomMap(1 / 1.55));
-$('map-fit').addEventListener('click', () => {
-  mapView = { zoom: 1, x: 0, y: 0 };
-  drawMapSoon();
-});
-const mapCredits = $('map-credits');
-const creditsTimer = setTimeout(() => { mapCredits.open = false; }, 5000);
-mapCredits.addEventListener('focusin', () => clearTimeout(creditsTimer), { once: true });
-mapCredits.addEventListener('click', () => clearTimeout(creditsTimer), { once: true });
+setTimeout(() => { $('map-attribution').hidden = true; }, 5000);
 viewport.addEventListener('wheel', event => {
   event.preventDefault();
   const bounds = viewport.getBoundingClientRect();
@@ -279,6 +270,10 @@ viewport.addEventListener('wheel', event => {
 viewport.addEventListener('keydown', event => {
   if (event.key === '+' || event.key === '=') zoomMap(1.55);
   else if (event.key === '-') zoomMap(1 / 1.55);
+  else if (event.key === 'Home') {
+    mapView = { zoom: 1, x: 0, y: 0 };
+    drawMapSoon();
+  }
   else {
     const offset = { ArrowLeft: [50, 0], ArrowRight: [-50, 0], ArrowUp: [0, 50], ArrowDown: [0, -50] }[event.key];
     if (!offset) return;

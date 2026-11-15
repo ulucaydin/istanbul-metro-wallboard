@@ -83,45 +83,30 @@ for (const [width, height] of displays) {
   });
 }
 
-test('map controls hide after inactivity and reappear for pointer, touch, and keyboard', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.clock.install();
-  await page.goto('/');
-  const navigation = page.locator('.map-navigation');
-  await expect(navigation).toHaveCSS('opacity', '1');
-  await page.clock.fastForward(7000);
-  await expect(navigation).toHaveCSS('opacity', '0');
-  await page.mouse.move(300, 300);
-  await expect(navigation).toHaveCSS('opacity', '1');
-  await page.clock.fastForward(7000);
-  await expect(navigation).toHaveCSS('opacity', '0');
-  await page.locator('#map-zoom-in').focus();
-  await expect(navigation).toHaveCSS('opacity', '1');
-  await page.clock.fastForward(7000);
-  await expect(navigation).toHaveCSS('opacity', '1');
-  await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'Zoom out' })).toBeFocused();
-  await page.locator('#map-viewport').focus();
-  await page.clock.fastForward(7000);
-  await expect(navigation).toHaveCSS('opacity', '0');
-  await page.evaluate(() => window.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch' })));
-  await expect(navigation).toHaveCSS('opacity', '1');
-});
-
-test('map credits collapse after startup and can be reopened with the keyboard', async ({ page }) => {
+test('map controls stay absent and map credits remain available in settings', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const time = new Date('2026-11-11T20:00:00Z');
   await page.clock.install({ time });
   await page.clock.pauseAt(new Date(time.getTime() + 1000));
   await page.goto('/');
-  const credit = page.getByRole('link', { name: '© OpenStreetMap contributors' });
-  await expect(credit).toBeVisible();
-  await expect(page.locator('.map-legend')).not.toContainText('OpenStreetMap');
+  await expect(page.locator('.map-navigation')).toHaveCount(0);
+  await expect(page.locator('#map-attribution')).toHaveText('Map data © OpenStreetMap contributors');
+  await expect(page.locator('#map-attribution')).toBeVisible();
   await page.clock.fastForward(5000);
-  await expect(credit).toBeHidden();
-  await page.locator('#map-credits summary').press('Enter');
+  await expect(page.locator('#map-attribution')).toBeHidden();
+  const settings = page.getByRole('button', { name: 'Display settings' });
+  await settings.click();
+  const credit = page.getByRole('link', { name: 'OpenStreetMap contributors' });
   await expect(credit).toHaveAttribute('href', 'https://www.openstreetmap.org/copyright');
   await expect(page.getByRole('link', { name: 'Download ODbL geographic data' })).toBeVisible();
+  await page.getByRole('radio', { name: 'Metroboard view' }).check();
+  await page.getByRole('checkbox', { name: 'Map-only view' }).check();
+  await page.getByRole('button', { name: 'Close settings' }).click();
+  await expect(page.locator('.map-navigation')).toHaveCount(0);
+  await page.mouse.move(100, 100);
+  await page.keyboard.press('Tab');
+  await expect(page.locator('.map-navigation')).toHaveCount(0);
+  await expect(settings).toBeVisible();
 });
 
 test('Metroboard materials and grains persist and preserve the running simulation', async ({ page }) => {
@@ -438,9 +423,7 @@ test('Metroboard hands off directional lamps and keeps the simulation running ac
   await expect(lamp('M6/nispetiye/reverse')).toHaveClass('station-lamp is-lit is-approaching');
   const levent = page.locator('[data-platform="M6/levent"] [data-direction="forward"]');
   const initialX = await levent.getAttribute('cx');
-  await page.mouse.move(100, 100);
-  await page.clock.runFor(200);
-  await page.getByRole('button', { name: 'Zoom in' }).click();
+  await page.locator('#map-viewport').press('+');
   await page.clock.runFor(100);
   await page.locator('#map-viewport').press('ArrowLeft');
   await page.clock.runFor(100);
@@ -596,9 +579,9 @@ test('geographic zoom retains color on the platform lamp while it fades', async 
   await expect(page.locator('.geographic-coast').first()).toBeAttached();
   const lens = page.locator('[data-platform="M4/kadikoy"] .station-lens');
   const initial = await lens.getAttribute('cx');
-  await page.getByRole('button', { name: 'Zoom in' }).click();
+  await page.locator('#map-viewport').press('+');
   await expect(lens).not.toHaveAttribute('cx', initial);
-  await page.getByRole('button', { name: 'Fit routes' }).click();
+  await page.locator('#map-viewport').press('Home');
   await expect(lens).toHaveAttribute('cx', initial);
   await page.getByRole('button', { name: 'Display settings' }).click();
   await page.getByLabel('Simulation time').selectOption('rush');

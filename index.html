@@ -31,19 +31,8 @@
 
       <main class="dashboard">
         <section class="map-card" aria-label="Istanbul rail network map">
-          <div class="map-viewport" id="map-viewport" tabindex="0" aria-label="Rail map. Use arrow keys to pan and plus or minus to zoom."></div>
-          <div class="map-navigation" aria-label="Map navigation">
-            <button type="button" id="map-zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
-            <button type="button" id="map-zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
-            <button type="button" id="map-fit" aria-label="Fit routes" title="Fit routes">↺</button>
-            <details class="map-credits" id="map-credits" open>
-              <summary aria-label="Map credits" title="Map credits">ⓘ</summary>
-              <div class="map-credits-links">
-                <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>
-                <a href="./geography-data.json" download aria-label="Download ODbL geographic data">Map data</a>
-              </div>
-            </details>
-          </div>
+          <div class="map-viewport" id="map-viewport" tabindex="0" aria-label="Rail map. Use arrow keys to pan, plus or minus to zoom, and Home to fit routes."></div>
+          <div id="map-attribution" class="map-attribution">Map data © OpenStreetMap contributors</div>
           <div class="map-legend" aria-label="Map symbols">
             <span><i class="legend-station" aria-hidden="true"></i><span id="station-legend-label">Station</span></span>
             <span><i class="legend-lit" aria-hidden="true"></i><span id="lamp-legend-label">Confirmed stop</span></span>
@@ -153,6 +142,7 @@
       </fieldset>
       <button class="full-button" id="fullscreen-button" type="button">Enter fullscreen</button>
       <p class="selection-message" id="fullscreen-message" aria-live="polite"></p>
+      <p class="data-credits">Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> · <a href="./geography-data.json" download aria-label="Download ODbL geographic data">Download map data</a></p>
     </dialog>
 
     <dialog class="overlay route-dialog" id="route-dialog" aria-labelledby="route-title"></dialog>

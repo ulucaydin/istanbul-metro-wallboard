@@ -598,52 +598,20 @@ legend { margin-bottom: 9px; font-weight: 690; }
 .geographic-coast { fill: none; stroke: #8f897b; stroke-width: .9; }
 [data-finish="dark"] .geographic-land { fill: #353a35; }
 [data-finish="dark"] .geographic-coast { stroke: #676d62; }
-.map-navigation {
+.map-attribution {
   position: absolute;
-  top: calc(var(--frame) + 8px);
-  left: calc(var(--frame) + 8px);
+  bottom: calc(var(--frame) + 38px);
+  right: calc(var(--frame) + 8px);
   z-index: 3;
-  display: inline-flex;
-  gap: 1px;
-  border: 1px solid #776550;
-  border-radius: 5px;
-  background: #352b24;
-  color: #f2e5d1;
-  transition: opacity 150ms linear;
-}
-.board.controls-idle .map-navigation:not(:focus-within):not(:hover) { opacity: 0; pointer-events: none; }
-@media (prefers-reduced-motion: reduce) { .map-navigation { transition: none; } }
-.map-navigation button, .map-credits summary {
-  display: grid;
-  place-items: center;
-  padding: 0;
-  width: 31px;
-  height: 31px;
-  border: 0;
+  padding: 6px 9px;
   border-radius: 4px;
-  background: transparent;
-  color: inherit;
-  font: 650 1.05rem/1 var(--mono);
+  background: #352b24e8;
+  color: #f2e5d1;
+  font-size: .72rem;
+  pointer-events: none;
 }
-.map-credits summary { cursor: pointer; list-style: none; }
-.map-credits summary::-webkit-details-marker { display: none; }
-.map-navigation :is(button, summary):is(:hover, :focus-visible) { background: #5c4a39; }
-.map-credits-links {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  width: max-content;
-  max-width: min(18rem, 75vw);
-  padding: 6px 10px;
-  border: 1px solid #776550;
-  border-radius: 5px;
-  background: #352b24;
-  font-size: .75rem;
-}
-.map-credits-links a { display: block; color: inherit; padding: 3px 0; }
-@media (max-width: 550px) {
-  .map-navigation button, .map-credits summary { width: 26px; height: 27px; }
-}
+.data-credits { color: var(--muted); font-size: .78rem; margin-top: 14px; line-height: 1.5; }
+.data-credits a { color: #edc894; }
 
 .view-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 [data-map-view="metroboard"] {
