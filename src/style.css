@@ -181,6 +181,12 @@ h1 {
 .inlet { fill: #cbc5b9; stroke: #a29a89; stroke-width: 1; }
 .map-region { fill: #61594c; font: 640 16px var(--mono); letter-spacing: .24em; }
 .track { fill: none; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.track.geographic-track[data-mode] { stroke-width: 1.6; stroke-dasharray: none; }
+.station-bezel-edge, .station-bezel { stroke-linecap: round; stroke-linejoin: round; paint-order: stroke; }
+.station-bezel-edge { fill: #756451; stroke: #756451; }
+.station-bezel { fill: #d9cbb6; stroke: #d9cbb6; }
+[data-bezel-type="interchange"] .station-bezel-edge { stroke: #493a2c; }
+[data-bezel-type="transit"] .station-bezel-edge { stroke-dasharray: 1.8 1.8; }
 .walking-link { stroke: #5e5346; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 2 4; }
 .interchange-dot { fill: #d0c2aa; stroke: #3f352b; stroke-width: 1.8; }
 .rail-dot { fill: #e2d4ba; stroke: #5d4b3a; stroke-width: 1.35; }
@@ -510,6 +516,9 @@ legend { margin-bottom: 9px; font-weight: 690; }
 [data-finish="dark"] .station-label { fill: #f4eadb; stroke: #2a3031; }
 [data-finish="dark"] .label-leader, [data-finish="dark"] .walking-link { stroke: #baa992; }
 [data-finish="dark"] .station-lens { stroke: #a19583; }
+[data-finish="dark"] .station-bezel-edge { fill: #aa9c88; stroke: #aa9c88; }
+[data-finish="dark"] .station-bezel { fill: #41423d; stroke: #41423d; }
+[data-finish="dark"] [data-bezel-type="interchange"] .station-bezel-edge { stroke: #d6c4a9; }
 [data-finish="dark"] .interchange-dot { fill: #393631; stroke: #d6c4a9; }
 [data-finish="dark"] .rail-dot { fill: #393631; stroke: #ac9e87; }
 [data-finish="dark"] .legend-interchange, [data-finish="dark"] .legend-rail { border-color: #dbccba; }
@@ -752,14 +761,14 @@ legend { margin-bottom: 9px; font-weight: 690; }
   stroke-width: .7;
 }
 [data-map-view="metroboard"] .engraved-route text { fill: var(--metal-ink); font: 700 9.5px var(--mono); }
-[data-map-view="metroboard"] .legend-station {
+.map-legend .legend-station {
   width: 15px;
-  border-color: var(--housing-rim);
+  border-color: var(--housing-rim, #756451);
   border-radius: 5px;
   background:
     radial-gradient(circle at 29% 50%, #171b1e 0 26%, transparent 30%),
     radial-gradient(circle at 71% 50%, #171b1e 0 26%, transparent 30%),
-    var(--housing-face);
+    var(--housing-face, #d9cbb6);
   box-shadow: none;
 }
 [data-map-view="metroboard"] .legend-interchange,

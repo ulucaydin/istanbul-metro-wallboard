@@ -321,9 +321,9 @@ test('the next station pulses in transit, lights steadily on arrival, and hands 
   await page.getByRole('button', { name: 'Display settings' }).click();
   await page.getByRole('button', { name: 'Start simulation' }).click();
 
-  const levent = page.locator('[data-lamp-platform="M6/levent"]');
-  const nispetiye = page.locator('[data-lamp-platform="M6/nispetiye"]');
-  const etiler = page.locator('[data-lamp-platform="M6/etiler"]');
+  const levent = page.locator('[data-lamp-platform="M6/levent/forward"]');
+  const nispetiye = page.locator('[data-lamp-platform="M6/nispetiye/forward"]');
+  const etiler = page.locator('[data-lamp-platform="M6/etiler/forward"]');
   await expect(levent).toHaveClass('station-lamp is-lit');
 
   await page.clock.fastForward(25_000);
@@ -367,7 +367,7 @@ test('an enabled feed lights explicit destinations and clears expired observatio
   await page.goto('/');
   await expect(page.locator('#tracking-message')).toHaveText('Live tracking · 1 of 11 lines');
   await expect(page.locator('[data-lit]')).toHaveCount(3);
-  const unalan = page.locator('[data-lamp-platform="M4/unalan"]');
+  const unalan = page.locator('[data-lamp-platform="M4/unalan"][data-direction="neutral"]');
   await expect(unalan).toHaveClass('station-lamp is-lit is-approaching');
   await page.getByRole('button', { name: 'Display settings' }).click();
   await page.getByRole('radio', { name: 'Metroboard view' }).check();
@@ -430,7 +430,8 @@ test('Metroboard hands off directional lamps and keeps the simulation running ac
   const zoomedX = await levent.getAttribute('cx');
   expect(zoomedX).not.toBe(initialX);
   await chooseView('Geographic');
-  await expect(lamp('M6/nispetiye')).toHaveClass('station-lamp is-lit is-approaching');
+  await expect(lamp('M6/nispetiye/forward')).toHaveClass('station-lamp is-lit is-approaching');
+  await expect(lamp('M6/nispetiye/reverse')).toHaveClass('station-lamp is-lit is-approaching');
   await chooseView('Metroboard view');
   await expect(nispetiyeForward).toHaveClass('station-lamp is-lit is-approaching');
   await expect(page.locator('#tracking-message')).toHaveText('Simulation · 08:20 TRT');
@@ -505,10 +506,10 @@ test('map-only fills the screen, keeps settings, and labels active simulation', 
 test('map draws corrected paths, transfer types and key labels', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
-  const m3 = page.locator('.track[data-route="M3"]');
+  const m3 = page.locator('.track[data-route="M3"][data-direction="forward"]');
   await expect(m3).toHaveCount(1);
   await expect(m3).toHaveAttribute('data-stops', /kirazli yenimahalle-m3 mahmutbey istoc ikitelli turgut-ozal/);
-  await expect(page.locator('.track[data-route="M9"]')).toHaveAttribute('data-stops', /^atakoy yenibosna cobancesme /);
+  await expect(page.locator('.track[data-route="M9"][data-direction="forward"]')).toHaveAttribute('data-stops', /^atakoy yenibosna cobancesme /);
   await expect(page.locator('[data-station="yenibosna"]')).toHaveAttribute('data-interchange', 'metro');
   await expect(page.locator('[data-station="cobancesme"]')).toHaveAttribute('data-interchange', 'none');
   await expect(page.locator('[data-station="taksim"]')).toHaveAttribute('data-interchange', 'transit');
@@ -536,17 +537,10 @@ test('transport layers can be combined and every rail path passes through its st
   await expect(page.locator('[data-station]')).toHaveCount(280);
   await expect(page.locator('#line-count')).toHaveText('22 of 22');
   await expect(page.locator('[data-lamp-platform^="B1/"].is-lit').first()).toBeVisible();
-  const offTrack = await page.locator('.track').evaluateAll(paths => paths.flatMap(path => {
-    const points = [];
-    const length = path.getTotalLength();
-    for (let step = 0; step < length; step += .5) points.push(path.getPointAtLength(step));
-    points.push(path.getPointAtLength(length));
-    return path.dataset.stops.split(' ').filter(id => {
-      const lens = document.querySelector('[data-platform="' + path.dataset.route + '/' + id + '"] .station-lens');
-      return !points.some(point => Math.hypot(lens.cx.baseVal.value - point.x, lens.cy.baseVal.value - point.y) < 1.25);
-    });
-  }));
-  expect(offTrack).toEqual([]);
+  await expect(page.locator('.geographic-track')).toHaveCount(43);
+  await expect(page.locator('.geographic-track[data-route="T3"]')).toHaveCount(1);
+  await expect(page.locator('[data-platform="M6/levent"] .station-lens')).toHaveCount(2);
+  await expect(page.locator('[data-platform="M2/sanayi/shuttle"] .station-lens')).toHaveCount(2);
   await settings.click();
   await page.getByRole('radio', { name: 'Metroboard view' }).check();
   await page.getByRole('button', { name: 'Close settings' }).click();
@@ -577,7 +571,7 @@ test('geographic zoom retains color on the platform lamp while it fades', async 
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
   await expect(page.locator('.geographic-coast').first()).toBeAttached();
-  const lens = page.locator('[data-platform="M4/kadikoy"] .station-lens');
+  const lens = page.locator('[data-platform="M4/kadikoy"] .station-lens[data-direction="forward"]');
   const initial = await lens.getAttribute('cx');
   await page.locator('#map-viewport').press('+');
   await expect(lens).not.toHaveAttribute('cx', initial);

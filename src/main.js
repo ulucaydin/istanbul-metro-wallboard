@@ -322,7 +322,7 @@ function applyPreferences() {
   $('metal-options').hidden = preferences.mapView !== 'metroboard';
   materialInput.value = preferences.material;
   grainInput.value = preferences.grain;
-  $('station-legend-label').textContent = preferences.mapView === 'metroboard' ? 'Station lamps' : 'Station';
+  $('station-legend-label').textContent = 'Station lamps';
   mapOnlyInput.checked = preferences.mapOnly;
   const actions = preferences.mapOnly ? mapCard : mastheadActions;
   if (settingsButton.parentElement !== actions) actions.append(settingsButton);
@@ -374,7 +374,7 @@ function updateLights(now = Date.now()) {
       : tracking.state;
   const simulatedTime = simulation ? now + simulation.offset : 0;
   const trains = simulation ? simulationFrame(simulatedTime, preferences.visible) : null;
-  const next = trains ? simulationLamps(trains, preferences.mapView === 'metroboard')
+  const next = trains ? simulationLamps(trains, true)
     : liveStationLights(state === 'live' ? snapshot : null, preferences.visible, now, true);
   if (!sameLights(lights.solid, next.solid) || !sameLights(lights.approaching, next.approaching)) {
     lights = next;

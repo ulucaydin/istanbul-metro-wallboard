@@ -45,7 +45,7 @@ function placeLenses(platform, occupied, radius, separation) {
   platform.lenses = lenses;
 }
 
-export function metroboardNetwork(routes, project, width, zoom) {
+export function metroboardNetwork(routes, project, width, zoom, geographicView = false) {
   const lensRadius = width < 560 ? Math.min(2.35, 1.45 + .4 * (zoom - 1)) : 2.65;
   const separation = lensRadius + .7;
   const locations = new Map();
@@ -75,12 +75,18 @@ export function metroboardNetwork(routes, project, width, zoom) {
       const start = route.branch?.[0] === from && route.branch[1] === to
         ? addPlatform(route, from, project(coordinates[0]), true) : platforms.get(from);
       const end = platforms.get(to);
-      const [dx, dy] = heading(start.point, end.point);
-      for (const platform of [start, end]) {
+      const points = geographicView ? coordinates.map(project) : [start.point, end.point];
+      points[0] = start.point;
+      points[points.length - 1] = end.point;
+      const directions = geographicView
+        ? [heading(points[0], points[1]), heading(points.at(-2), points.at(-1))]
+        : [heading(start.point, end.point), heading(start.point, end.point)];
+      for (const [index, platform] of [start, end].entries()) {
+        const [dx, dy] = directions[index];
         platform.tangent[0] += dx;
         platform.tangent[1] += dy;
       }
-      return { from, to, start, end };
+      return { from, to, start, end, points };
     });
     return { route, segments };
   });
@@ -93,14 +99,20 @@ export function metroboardNetwork(routes, project, width, zoom) {
   for (const { route, segments } of routeEdges) {
     const forward = [];
     const reverse = [];
-    for (const { from, to, start, end } of segments) {
+    for (const { from, to, start, end, points } of segments) {
       if (start.keys.length > 1 && end.keys.length > 1 && m1Branches.has(route.id)) {
         const shared = from + '/' + to;
         if (sharedRails.has(shared)) continue;
         sharedRails.add(shared);
       }
-      forward.push([start.lenses[0].point, end.lenses[0].point]);
-      if (!route.loop) reverse.push([start.lenses[1].point, end.lenses[1].point]);
+      const lane = direction => points.map((point, index) => {
+        if (index === 0) return start.lenses[direction].point;
+        if (index === points.length - 1) return end.lenses[direction].point;
+        const tangent = heading(points[index - 1], points[index + 1]);
+        return shifted(point, tangent, route.loop ? 0 : direction === 0 ? separation : -separation);
+      });
+      forward.push(lane(0));
+      if (!route.loop) reverse.push(lane(1));
     }
     tracks.push({ route, direction: 'forward', segments: forward });
     if (reverse.length) tracks.push({ route, direction: 'reverse', segments: reverse });

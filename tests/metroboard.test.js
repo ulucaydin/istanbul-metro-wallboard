@@ -37,3 +37,32 @@ test('every engraved lane is straight between its directional station lenses', (
     assert.equal(bezelGroups(locations.get('sanayi'), lensRadius)[0].length, 2);
   }
 });
+
+test('geographic rails preserve mapped curves and meet directional station lamps', () => {
+  const project = ([lon, lat]) => [(lon - 28.5) * 2100, (41.3 - lat) * 2100 / .754];
+  const { locations, tracks } = metroboardNetwork(lines, project, 1920, 1, true);
+  const segments = new Map(tracks.map(track => [track.route.id + '/' + track.direction, track.segments]));
+  for (const route of lines) {
+    const forward = segments.get(route.id + '/forward');
+    const reverse = segments.get(route.id + '/reverse') ?? [];
+    let index = 0;
+    for (const [from, to, coordinates] of geographic.routes[route.id].edges) {
+      const shuttle = route.id === 'M2' && from === 'sanayi' && to === 'seyrantepe';
+      const start = locations.get(from).find(platform => platform.keys.includes(route.id + '/' + from + (shuttle ? '/shuttle' : '')));
+      const end = locations.get(to).find(platform => platform.keys.includes(route.id + '/' + to));
+      if (route.id === 'M1B' && start.keys.length > 1 && end.keys.length > 1) continue;
+      assert.equal(forward[index].length, coordinates.length, route.id + ' ' + from);
+      assert.deepEqual(forward[index][0], start.lenses[0].point);
+      assert.deepEqual(forward[index].at(-1), end.lenses[0].point);
+      if (!route.loop) {
+        assert.deepEqual(reverse[index][0], start.lenses[1].point);
+        assert.deepEqual(reverse[index].at(-1), end.lenses[1].point);
+      }
+      index++;
+    }
+    assert.equal(forward.length, index);
+    assert.equal(reverse.length, route.loop ? 0 : index);
+  }
+  assert.deepEqual(locations.get('aksaray')[0].keys, ['M1A/aksaray', 'M1B/aksaray']);
+  assert.ok(locations.get('sanayi').some(platform => platform.key === 'M2/sanayi/shuttle'));
+});

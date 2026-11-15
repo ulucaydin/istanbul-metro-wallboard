@@ -176,33 +176,10 @@ function drawBadge(svg, route, x, y, layout, metroboard, obstacles) {
   return { x: left - 5, y: top - 4, w: w + 10, h: 28 };
 }
 
-function geographicNetwork(visible, project) {
-  const locations = new Map();
-  const tracks = visible.map(route => {
-    const geo = geographic.routes[route.id];
-    for (const [id, coordinates] of Object.entries(geo.stops)) {
-      if (!locations.has(id)) locations.set(id, []);
-      locations.get(id).push({ route, key: route.id + '/' + id, point: project(coordinates) });
-    }
-    const segments = geo.edges.map(([from, to, coordinates]) => {
-      const points = coordinates.map(project);
-      if (route.id === 'M2' && from === 'sanayi' && to === 'seyrantepe') {
-        locations.get(from).push({ route, key: 'M2/sanayi/shuttle', point: points[0] });
-      } else {
-        points[0] = project(geo.stops[from]);
-      }
-      points[points.length - 1] = project(geo.stops[to]);
-      return points;
-    });
-    return { route, segments };
-  });
-  return { tracks, locations };
-}
-
-function drawTracks(svg, tracks) {
+function drawTracks(svg, tracks, metroboard) {
   return tracks.map(({ route, direction, segments }) => {
     const path = element('path', { d: segments.map(points => pathData(points)).join(''),
-      stroke: route.ink, class: direction ? 'track engraved-track' : 'track', 'data-route': route.id, 'data-mode': route.mode,
+      stroke: route.ink, class: metroboard ? 'track engraved-track' : 'track geographic-track', 'data-route': route.id, 'data-mode': route.mode,
       'data-stops': [...route.stops, ...(route.branch || [])].join(' ') });
     if (direction) path.dataset.direction = direction;
     path.style.setProperty('--track-color', route.ink);
@@ -236,7 +213,7 @@ function lampGlow(light, [x, y], radius) {
   );
 }
 
-function drawMetroboardPlatform(lens, platform, radius, registerLight) {
+function drawDirectionalPlatform(lens, platform, radius, registerLight) {
   for (const { direction, point: [x, y] } of platform.lenses) {
     const keys = platform.keys.map(key => directionalKey(key, direction));
     // A one-way platform has no ambiguity about the observed train's direction.
@@ -262,12 +239,11 @@ export function renderMap(container, selected, textSize, view, mode) {
   });
   svg.append(element('desc', { id: 'diagram-description' }, metroboard
     ? 'Istanbul rail diagram with straight links between station lamps. Station locations are derived from OpenStreetMap. Zoom in to inspect stations.'
-    : 'Rail alignments and station locations are derived from OpenStreetMap. Zoom in to inspect the central network.'));
+    : 'Rail alignments and station locations are derived from OpenStreetMap. Separate station lamps indicate each direction. Zoom in to inspect the central network.'));
   stationLens(svg, metroboard);
   if (!metroboard) geography(svg, project);
-  const { tracks, locations, lensRadius } = metroboard
-    ? metroboardNetwork(visible, project, layout.width, view.zoom) : geographicNetwork(visible, project);
-  const paths = drawTracks(svg, tracks);
+  const { tracks, locations, lensRadius } = metroboardNetwork(visible, project, layout.width, view.zoom, !metroboard);
+  const paths = drawTracks(svg, tracks, metroboard);
 
   const pointForLabel = id => locations.get(id)[0].point;
   const link = (first, second, key) => {
@@ -281,7 +257,7 @@ export function renderMap(container, selected, textSize, view, mode) {
   const leaders = element('g', { 'aria-hidden': 'true' });
   const bezels = element('g', { 'aria-hidden': 'true' });
   svg.append(leaders);
-  if (metroboard) svg.append(bezels);
+  svg.append(bezels);
   const glow = element('g', { 'aria-hidden': 'true', class: 'station-glows' });
   const lamps = [];
   const renderedStops = [...locations].map(([id, platforms]) => {
@@ -295,7 +271,7 @@ export function renderMap(container, selected, textSize, view, mode) {
     group.append(element('title', {}, stop.name + ' · ' + [...new Set(
       platforms.flatMap(({ route, keys }) => keys ? keys.map(key => key.split('/')[0]) : [route.id]),
     )].join(', ')));
-    const housings = metroboard ? bezelGroups(platforms, lensRadius) : platforms.map(platform => [platform]);
+    const housings = bezelGroups(platforms, lensRadius);
     for (const [first] of housings.slice(1)) {
       const [base] = housings[0];
       const connector = element('line', { x1: base.point[0], y1: base.point[1], x2: first.point[0], y2: first.point[1],
@@ -303,9 +279,9 @@ export function renderMap(container, selected, textSize, view, mode) {
       if (Math.hypot(base.point[0] - first.point[0], base.point[1] - first.point[1]) >= 1.5) leaders.append(connector);
     }
     const transfer = metro || branch ? 'interchange' : rail ? 'transit' : 'station';
-    const boxes = metroboard ? housings.map(housing => drawBezel(bezels, housing, lensRadius, transfer)) : undefined;
+    const boxes = housings.map(housing => drawBezel(bezels, housing, lensRadius, transfer));
     for (const platform of platforms) {
-      const { key, point: [x, y] } = platform;
+      const { key } = platform;
       const lens = element('g', { 'data-platform': key });
       function registerLight(keys, point, radius, direction) {
         const light = element('g', { class: 'station-lamp', 'data-lamp-platform': keys[0], 'data-direction': direction });
@@ -314,25 +290,8 @@ export function renderMap(container, selected, textSize, view, mode) {
         glow.append(light);
         lamps.push({ keys, group, light });
       }
-      if (metroboard) {
-        drawMetroboardPlatform(lens, platform, lensRadius, registerLight);
-        group.append(lens);
-        continue;
-      }
-      const light = element('g', { class: 'station-lamp', 'data-lamp-platform': key });
-      if (metro) lens.append(element('circle', { cx: x, cy: y, r: 5.6, class: branch ? 'interchange-dot branch-dot' : 'interchange-dot' }));
-      if (rail && !metro) lens.append(element('rect', { x: x - 4, y: y - 4, width: 8, height: 8, rx: 1,
-        transform: `rotate(45 ${x} ${y})`, class: 'rail-dot' }));
-      lens.append(element('circle', { cx: x, cy: y, r: terminal || metro ? 3.7 : 3, class: 'station-lens' }));
-      light.append(
-        element('circle', { cx: x, cy: y, r: 9.2, class: 'lamp-bloom' }),
-        element('circle', { cx: x, cy: y, r: 5.7, class: 'lamp-halo' }),
-        element('circle', { cx: x, cy: y, r: terminal || metro ? 3.5 : 3, class: 'lamp-core' }),
-        element('circle', { cx: x - .8, cy: y - .8, r: 1.05, class: 'lamp-glint' }),
-      );
+      drawDirectionalPlatform(lens, platform, lensRadius, registerLight);
       group.append(lens);
-      glow.append(light);
-      lamps.push({ keys: [key], group, light });
     }
     svg.append(group);
     return { ...stop, boxes, priority: landmarkOffsets[id] ? 5 : terminal ? 3 : metro ? 2 : rail ? 1 : 0 };
@@ -357,7 +316,7 @@ export function renderMap(container, selected, textSize, view, mode) {
 
   const obstacles = [{ x: layout.width - 58, y: 0, w: 58, h: 50 }];
   const badges = visible.map(route => ({ route, point: project(geographic.routes[route.id].stops[route.badge?.[0] ?? route.stops.at(-1)]) }));
-  const stationObstacles = metroboard ? renderedStops.flatMap(stop => stop.boxes) : [];
+  const stationObstacles = renderedStops.flatMap(stop => stop.boxes);
   for (const { route, point: [x, y] } of badges) {
     if (x < 14 || y < 14 || x > layout.width - 14 || y > layout.height - 14) continue;
     const badge = metroboard ? drawBadge(svg, route, x, y, layout, true, [...obstacles, ...stationObstacles])

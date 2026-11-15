@@ -48,7 +48,7 @@ Use the display's orientation setting and the operating system's power settings 
 
 ## Run the train simulation
 
-In **Display settings → Map view**, choose **Metroboard view** for an engraved rail diagram on brushed metal. **Light** uses aluminum and **Dark** uses graphite. Metroboard view works with either the full dashboard or **Map-only view**. The browser saves your view choice and initially opens in **Geographic**. A station pair has one lamp per travel direction. The one-way Moda loop uses a single lamp. A live stopped observation with unspecified direction lights the center of a pair. Zoom in to read more station labels, or open a route badge in the full dashboard for its complete stop list.
+In **Display settings → Map view**, choose **Metroboard view** for an engraved rail diagram on brushed metal. **Light** uses aluminum and **Dark** uses graphite. Metroboard view works with either the full dashboard or **Map-only view**. The browser saves your view choice and initially opens in **Geographic**. In both views, a station pair has one lamp per travel direction. The one-way Moda loop uses a single lamp. A live observation with unspecified direction lights the center of a pair. Zoom in to read more station labels, or open a route badge in the full dashboard for its complete stop list.
 
 In Metroboard view, **Display settings → Metroboard background** offers aluminum, brass, and copper, with fine or coarse horizontal brushing, vertical brushing, or a smooth finish. The material and grain work with either Light or Dark and are saved in the browser.
 
@@ -121,7 +121,7 @@ This illustrative response uses fixed timestamps. A production integration must 
 }
 ```
 
-The board polls the enabled source every 10 seconds, uses a seven-second request timeout, and backs off up to one minute on errors. It extinguishes lamps when observations or the snapshot reach 45 seconds of age, when the source fails, or when the device goes offline. For `STOPPED_AT`, `stationId` identifies the occupied stop. For `INCOMING_AT` and `IN_TRANSIT_TO`, it identifies the explicitly reported next stop. These approaches use the selected In-transit lights setting. Metroboard view uses the center light for directionless live observations on paired platforms. Live status shows the number of lines covered by the operator feed.
+The board polls the enabled source every 10 seconds, uses a seven-second request timeout, and backs off up to one minute on errors. It extinguishes lamps when observations or the snapshot reach 45 seconds of age, when the source fails, or when the device goes offline. For `STOPPED_AT`, `stationId` identifies the occupied stop. For `INCOMING_AT` and `IN_TRANSIT_TO`, it identifies the explicitly reported next stop. These approaches use the selected In-transit lights setting. Both views use the center light for directionless live observations on paired platforms. Live status shows the number of lines covered by the operator feed.
 
 ## Additional transport layers
 
@@ -136,7 +136,7 @@ Additional layers cover the services above. The simulation uses these routes to 
 
 ## Geographic data and license
 
-Both views draw all 22 routes north-up using OpenStreetMap station-platform coordinates. The Geographic view uses a representative track alignment for both directions and draws the OpenStreetMap coastline. Metroboard view connects the directional station lamps with straight engraved segments and shares coincident platforms on the M1 trunk. Lenses at close platforms within a station shift slightly to keep each direction visible. Display settings contains the map credit and processed data download.
+Both views draw all 22 routes north-up using OpenStreetMap station-platform coordinates. Geographic view draws paired directional tracks along a representative geographic alignment and includes the OpenStreetMap coastline. Metroboard view connects directional lamps with straight engraved segments. Both views share coincident platforms on the M1 trunk. Lenses at close platforms within a station shift slightly to keep each direction visible. Display settings contains the map credit and processed data download.
 
 The processed geometry is in `src/geography-data.json` and the built site serves it as `geography-data.json` under the Open Database License (ODbL) 1.0. The snapshot uses the Geofabrik Türkiye extract timestamped 10 November 2026 at 21:21 UTC, supplemented with selected OSM route relations. The extraction and build scripts in `scripts/` need Python with `osmium` and `shapely`. Export `{ lines }` from `src/network.js` as JSON, then run `extract-osm.py <pbf> <intermediate.json> [directory-of-full-relation-json]` and `build-geography.py <intermediate.json> <route-inventory.json> src/geography-data.json`. [Geofabrik Türkiye extract](https://download.geofabrik.de/europe/turkey.html) · [OpenStreetMap contributors and ODbL terms](https://www.openstreetmap.org/copyright)
 
