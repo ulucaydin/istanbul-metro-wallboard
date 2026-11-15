@@ -609,7 +609,10 @@ legend { margin-bottom: 9px; font-weight: 690; }
   border-radius: 5px;
   background: #352b24;
   color: #f2e5d1;
+  transition: opacity 150ms linear;
 }
+.board.controls-idle .map-navigation:not(:focus-within):not(:hover) { opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .map-navigation { transition: none; } }
 .map-navigation button, .map-credits summary {
   display: grid;
   place-items: center;
